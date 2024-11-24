@@ -23,7 +23,7 @@ use std::ptr::null_mut;
 /// Interface to the Arcade Learning Environment emulator
 pub struct Ale {
 	ptr: *mut ale_sys::ALEInterface,
-	ret: i32,
+	score: i32,
 }
 
 unsafe impl Send for Ale {
@@ -35,8 +35,8 @@ impl Ale {
 	pub fn new() -> Ale {
 		let ptr = unsafe { ale_sys::ALE_new() };
 		assert!(ptr != null_mut());
-		let ret = 0;
-		Ale { ptr , ret}
+		let score = 0;
+		Ale { ptr , score}
 	}
 
 	// pub fn getString(ale: *mut ALEInterface, key: *const c_char) -> *const c_char; // TODO
@@ -137,7 +137,7 @@ impl Ale {
 	pub fn act(&mut self, action: i32) -> i32 {
 		unsafe { 
 			let r = ale_sys::act(self.ptr, action);
-			self.ret += r;
+			self.score += r;
 			r
 		}
 	}
@@ -150,7 +150,7 @@ impl Ale {
 	/// Resets the game, but not the full system.
 	pub fn reset_game(&mut self) {
 		unsafe {
-			self.ret = 0;
+			self.score = 0;
 			ale_sys::reset_game(self.ptr);
 		}
 	}
@@ -246,6 +246,10 @@ impl Ale {
 	/// Returns the remaining number of lives.
 	pub fn lives(&mut self) -> i32 {
 		unsafe { ale_sys::lives(self.ptr) }
+	}
+
+	pub fn scores(&mut self) -> i32 {
+		self.score
 	}
 
 	/// Returns the frame number since the start of the current episode.

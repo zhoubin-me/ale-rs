@@ -57,14 +57,11 @@ fn main() {
 }
 
 fn run_download_roms() -> Result<&'static str, io::Error> {
-	// let dir = tempdir::TempDir::new("ale-xtask").expect("failed to generate temp directory");
-	// let b64_tar_path = dir.path().join(ATARI_B64_TAR_FILENAME);
-	// let tar_path = dir.path().join(ATARI_TAR_FILENAME);
-	// let extract_dir = dir.path().join("extract");
-	let dir = Path::new("/home/bzhou/repo").to_path_buf();
-	let b64_tar_path = dir.as_path().join(ATARI_B64_TAR_FILENAME);
-	let tar_path = dir.as_path().join(ATARI_TAR_FILENAME);
-	let extract_dir = dir.as_path().join("extract");
+	let dir = tempdir::TempDir::new("ale-xtask").expect("failed to generate temp directory");
+	let b64_tar_path = dir.path().join(ATARI_B64_TAR_FILENAME);
+	let tar_path = dir.path().join(ATARI_TAR_FILENAME);
+	let extract_dir = dir.path().join("extract");
+
 
 
 	println!("{:?}", b64_tar_path);
@@ -88,12 +85,6 @@ fn run_download_roms() -> Result<&'static str, io::Error> {
 	run_extract(&tar_path, &extract_dir);
 	let roms_dir = project_root().join("roms");
 	std::fs::create_dir_all(&roms_dir).expect("failed to create roms dir");
-	// for rom in std::fs::read_dir(extract_dir.join("atari-py-0.2.6").join("atari_py").join("atari_roms")).expect("failed to read dir") {
-	// 	let rom = rom.expect("failed to read dir");
-	// 	eprintln!("{}copy {}", XTASK_PREFIX, rom.path().file_name().unwrap_or(OsStr::new("")).to_string_lossy());
-	// 	std::fs::copy(rom.path(), roms_dir.join(rom.path().file_name().unwrap()))
-	// 		.expect("failed to copy file");
-	// }
 
 	for entry in WalkDir::new(&extract_dir).into_iter().filter_map(Result::ok) {
 		let path = entry.path();
@@ -102,7 +93,7 @@ fn run_download_roms() -> Result<&'static str, io::Error> {
 		}
 	}
 	
-	Ok("Haha")
+	Ok("")
 }
 
 fn run_download(url: &str, dst: &Path) {

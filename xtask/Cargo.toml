@@ -16,3 +16,5 @@ tempdir = "0.3.7"
 reqwest = { version = "0.10.1", features = ["blocking"] }
 tar = "0.4.26"
 flate2 = "1.0.13"
+base64 = "0.22.1"
+walkdir = "2.5.0"

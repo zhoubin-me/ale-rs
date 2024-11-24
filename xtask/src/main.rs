@@ -7,9 +7,13 @@ use std::ffi::OsStr;
 
 use clap::{Arg, App, SubCommand};
 
+use base64::{decode, DecodeError};
+use std::io::{self, Read, Write};
+use walkdir::WalkDir;
 
-const PIP_ATARI_PY_TAR_URL: &'static str = "https://files.pythonhosted.org/packages/43/dd/2721f34a89dc520d2e09363fd23d110a33bbab2399e50fdced6eb2ed2157/atari-py-0.2.6.tar.gz";
-const ATARI_PY_TAR_FILENAME: &'static str = "atari-py-0.2.6.tar.gz";
+const ATARI_ROMS_URL: &'static str = "https://gist.githubusercontent.com/jjshoots/61b22aefce4456920ba99f2c36906eda/raw/00046ac3403768bfe45857610a3d333b8e35e026/Roms.tar.gz.b64";
+const ATARI_B64_TAR_FILENAME: &'static str = "Roms.tar.gz.b64";
+const ATARI_TAR_FILENAME: &'static str = "Roms.tar.gz";
 
 const XTASK_PREFIX: &'static str = "\x1B[1m\x1B[32m       xtask\x1B[0m ";
 const ERROR_PREFIX: &'static str = "\x1B[1m\x1B[31merror\x1B[37m:\x1B[0m ";
@@ -31,11 +35,7 @@ fn main() {
 
 	let matches = app.clone().get_matches();
 
-	if let Some(_) = matches.subcommand_matches("gen-bindings") {
-		eprintln!("{}gen-bindings", XTASK_PREFIX);
-		run_bindgen();
-
-	} else if let Some(_) = matches.subcommand_matches("download-roms") {
+	if let Some(_) = matches.subcommand_matches("download-roms") {
 		eprintln!("{}download-roms", XTASK_PREFIX);
 		run_download_roms();
 
@@ -56,93 +56,53 @@ fn main() {
 	}
 }
 
-fn run_bindgen() {
-	eprintln!("{}run bindgen", XTASK_PREFIX);
-	let bindings = match bindgen::builder()
-		.clang_arg(format!("-I{}", project_root().join("ale-sys").join("ale").join("src").display()))
-		.clang_arg(format!("-I{}", project_root().join("ale-sys").join("ale").join("ale_py").display()))
-		.clang_args(&["-x", "c++"])
-		.clang_arg("-std=c++14")
-		.enable_cxx_namespaces()
-		.header(format!("{}", project_root().join("ale-sys").join("wrapper.h").display()))
-		.whitelist_function("ALE_new")
-		.whitelist_function("ALE_del")
-		.whitelist_function("getString")
-		.whitelist_function("getInt")
-		.whitelist_function("getBool")
-		.whitelist_function("getFloat")
-		.whitelist_function("setString")
-		.whitelist_function("setInt")
-		.whitelist_function("setBool")
-		.whitelist_function("setFloat")
-		.whitelist_function("loadROM")
-		.whitelist_function("act")
-		.whitelist_function("game_over")
-		.whitelist_function("reset_game")
-		.whitelist_function("getAvailableModes")
-		.whitelist_function("getAvailableModesSize")
-		.whitelist_function("setMode")
-		.whitelist_function("getAvailableDifficulties")
-		.whitelist_function("getAvailableDifficultiesSize")
-		.whitelist_function("setDifficulty")
-		.whitelist_function("getLegalActionSet")
-		.whitelist_function("getLegalActionSize")
-		.whitelist_function("getMinimalActionSet")
-		.whitelist_function("getMinimalActionSize")
-		.whitelist_function("getFrameNumber")
-		.whitelist_function("lives")
-		.whitelist_function("getEpisodeFrameNumber")
-		.whitelist_function("getScreen")
-		.whitelist_function("getRAM")
-		.whitelist_function("getRAMSize")
-		.whitelist_function("getScreenWidth")
-		.whitelist_function("getScreenHeight")
-		.whitelist_function("getScreenRGB")
-		.whitelist_function("getScreenGrayscale")
-		.whitelist_function("saveState")
-		.whitelist_function("loadState")
-		.whitelist_function("cloneState")
-		.whitelist_function("restoreState")
-		.whitelist_function("cloneSystemState")
-		.whitelist_function("restoreSystemState")
-		.whitelist_function("deleteState")
-		.whitelist_function("saveScreenPNG")
-		.whitelist_function("encodeState")
-		.whitelist_function("encodeStateLen")
-		.whitelist_function("decodeState")
-		.whitelist_function("setLoggerMode")
-		.opaque_type(".*")
-		.with_codegen_config(CodegenConfig::FUNCTIONS | CodegenConfig::TYPES)
-		.generate() {
-			Ok(b) => b,
-			Err(e) => {
-				eprintln!("{}failed to generate bindings: {:?}", ERROR_PREFIX, e);
-				std::process::exit(1);
-			}
-		};
-	eprintln!("{}write bindings", XTASK_PREFIX);
-	if let Err(e) = bindings.write_to_file(project_root().join("ale-sys").join("src").join("bindings.rs")) {
-		eprintln!("{}failed to write bindings: {:?}", ERROR_PREFIX, e);
-		std::process::exit(1);
+fn run_download_roms() -> Result<&'static str, io::Error> {
+	// let dir = tempdir::TempDir::new("ale-xtask").expect("failed to generate temp directory");
+	// let b64_tar_path = dir.path().join(ATARI_B64_TAR_FILENAME);
+	// let tar_path = dir.path().join(ATARI_TAR_FILENAME);
+	// let extract_dir = dir.path().join("extract");
+	let dir = Path::new("/home/bzhou/repo").to_path_buf();
+	let b64_tar_path = dir.as_path().join(ATARI_B64_TAR_FILENAME);
+	let tar_path = dir.as_path().join(ATARI_TAR_FILENAME);
+	let extract_dir = dir.as_path().join("extract");
+
+
+	println!("{:?}", b64_tar_path);
+
+	run_download(ATARI_ROMS_URL, &b64_tar_path);
+	
+	let mut b64_file = File::open(&b64_tar_path)?;
+	let mut content = String::new();
+	b64_file.read_to_string(&mut content)?;
+	let data: String = content.chars().filter(|&c| c != '\n' && c != '\r' && !c.is_whitespace()).collect();
+
+	match decode(&data) {
+		Ok(decoded_data) => {
+				let mut file = File::create(&tar_path)?;
+				file.write_all(&decoded_data)?;
+		}
+		Err(e) => eprintln!("Error decoding Base64 content: {}", e),
 	}
-}
 
-fn run_download_roms() {
-	let dir = tempdir::TempDir::new("ale-xtask").expect("failed to generate temp directory");
-	let tar_path = dir.path().join(ATARI_PY_TAR_FILENAME);
-	let extract_dir = dir.path().join("extract");
 
-	run_download(PIP_ATARI_PY_TAR_URL, &tar_path);
 	run_extract(&tar_path, &extract_dir);
-
 	let roms_dir = project_root().join("roms");
 	std::fs::create_dir_all(&roms_dir).expect("failed to create roms dir");
-	for rom in std::fs::read_dir(extract_dir.join("atari-py-0.2.6").join("atari_py").join("atari_roms")).expect("failed to read dir") {
-		let rom = rom.expect("failed to read dir");
-		eprintln!("{}copy {}", XTASK_PREFIX, rom.path().file_name().unwrap_or(OsStr::new("")).to_string_lossy());
-		std::fs::copy(rom.path(), roms_dir.join(rom.path().file_name().unwrap()))
-			.expect("failed to copy file");
+	// for rom in std::fs::read_dir(extract_dir.join("atari-py-0.2.6").join("atari_py").join("atari_roms")).expect("failed to read dir") {
+	// 	let rom = rom.expect("failed to read dir");
+	// 	eprintln!("{}copy {}", XTASK_PREFIX, rom.path().file_name().unwrap_or(OsStr::new("")).to_string_lossy());
+	// 	std::fs::copy(rom.path(), roms_dir.join(rom.path().file_name().unwrap()))
+	// 		.expect("failed to copy file");
+	// }
+
+	for entry in WalkDir::new(&extract_dir).into_iter().filter_map(Result::ok) {
+		let path = entry.path();
+		if path.is_file() && path.extension() == Some(std::ffi::OsStr::new("bin")) {
+			std::fs::copy(entry.path(), roms_dir.join(entry.path().file_name().unwrap()));
+		}
 	}
+	
+	Ok("Haha")
 }
 
 fn run_download(url: &str, dst: &Path) {

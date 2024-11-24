@@ -23,13 +23,20 @@ use std::ptr::null_mut;
 /// Interface to the Arcade Learning Environment emulator
 pub struct Ale {
 	ptr: *mut ale_sys::ALEInterface,
+	ret: i32,
 }
+
+unsafe impl Send for Ale {
+
+}
+
 impl Ale {
 	/// Creates a new interface to the Arcade Learning Environment, i.e. a new emulator instance.
 	pub fn new() -> Ale {
 		let ptr = unsafe { ale_sys::ALE_new() };
 		assert!(ptr != null_mut());
-		Ale { ptr }
+		let ret = 0;
+		Ale { ptr , ret}
 	}
 
 	// pub fn getString(ale: *mut ALEInterface, key: *const c_char) -> *const c_char; // TODO
@@ -128,7 +135,11 @@ impl Ale {
 	/// It is the user's responsibility to check if the game has ended and reset
 	/// when necessary - this method will keep pressing buttons on the game over screen.
 	pub fn act(&mut self, action: i32) -> i32 {
-		unsafe { ale_sys::act(self.ptr, action) }
+		unsafe { 
+			let r = ale_sys::act(self.ptr, action);
+			self.ret += r;
+			r
+		}
 	}
 
 	/// Indicates if the game has ended.
@@ -139,6 +150,7 @@ impl Ale {
 	/// Resets the game, but not the full system.
 	pub fn reset_game(&mut self) {
 		unsafe {
+			self.ret = 0;
 			ale_sys::reset_game(self.ptr);
 		}
 	}

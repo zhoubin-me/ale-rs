@@ -19,5 +19,6 @@ exclude = [
 [dependencies]
 
 [build-dependencies]
+bindgen = "0.70.1"
 cmake = "0.1"
 tempdir = "0.3.7"

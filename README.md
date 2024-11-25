@@ -9,6 +9,8 @@ Some games such as Breakout, Asteroids, Ms Pacman and Space Invaders are bundled
 ## Examples
 Before running the examples you'll be required to run a command that downloads the Atari games into the local directory. This is *not* required when using this as a library via. [crates.io](https://crates.io), as they are bundled with the crate.
 ```bash
+git clone https://github.com/zhoubin-me/ale-rs.git ale-rs --recursive
+cd ale-rs
 cargo xtask download-roms
 ```
 
@@ -29,11 +31,6 @@ Controls:
 - <kbd>D</kbd>/<kbd>Right</kbd>: Move paddle right
 - <kbd>Space</kbd>: "Fire" key (trigger ball)
 - <kbd>R</kbd>: Reset game
-
-On Ubuntu you'll require `pkg-config` and the X11 development libraries.
-```bash
-sudo apt install pkg-config libx11-dev
-```
 
 If everything goes to plan, you should see something like this:
 

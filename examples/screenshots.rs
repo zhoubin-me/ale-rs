@@ -21,7 +21,7 @@ fn main() {
 			ale.save_screen_png(&filename_cstr);
 		}
 		let legal_actions = ale.legal_action_set();
-		let action = legal_actions[rand::thread_rng().gen_range(0, legal_actions.len())];
+		let action = legal_actions.choose(&mut thread_rng()).copied().unwrap();
 		ale.act(action);
 	}
 }

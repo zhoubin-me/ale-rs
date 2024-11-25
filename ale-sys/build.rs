@@ -7,12 +7,10 @@ fn main() {
 
 	let mut config = cmake::Config::new(&ale_dir);
 	let des = config
-		.define("BUILD_CPP_LIB", "ON")
-        .define("BUILD_PYTHON_LIB", "OFF")
         .build();
 
     println!("cargo:rustc-link-search=native={}/lib", des.display());
-    println!("cargo:rustc-link-lib=ale");
+    println!("cargo:rustc-link-lib=ale_c");
 
     let bindings = bindgen::Builder::default()
         // The input header we would like to generate

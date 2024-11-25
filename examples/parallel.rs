@@ -9,7 +9,7 @@ fn main() {
     let num_envs = 16;
     Ale::set_logger_mode(LoggerMode::Error);
     for _ in 0..num_envs {
-        let mut env = Ale::new();
+        let mut env = Ale::new(108_000);
         let e = env.load_rom(BundledRom::Breakout);
         match e {
             Ok(_) => (),
@@ -18,12 +18,11 @@ fn main() {
         envs.push(env);
     }
 
-    let actions = envs[0].legal_action_set();
-
+    let n = envs[0].action_dim();
     let start_time = std::time::Instant::now();
     for _ in 0..10000 {
         envs.par_iter_mut().for_each(|e| {
-            let action = actions[thread_rng().gen_range(0..actions.len())];
+            let action = thread_rng().gen_range(0..n);
             e.act(action);
             if e.is_game_over() {
                 e.reset_game();

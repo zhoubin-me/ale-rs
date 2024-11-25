@@ -21,7 +21,7 @@ fn main() {
     let actions = envs[0].legal_action_set();
 
     let start_time = std::time::Instant::now();
-    for _ in 0..500000 {
+    for _ in 0..10000 {
         envs.par_iter_mut().for_each(|e| {
             let action = actions[thread_rng().gen_range(0..actions.len())];
             e.act(action);

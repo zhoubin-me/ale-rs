@@ -1,5 +1,3 @@
-![Build Status](https://github.com/trolleyman/ale-rs/workflows/CI/badge.svg)
-
 # `ale`
 A Rust interface to the [Arcade Learning Environment](https://github.com/mgbellemare/Arcade-Learning-Environment).
 
@@ -20,10 +18,9 @@ This example outputs the screen of the Atari to the `examples/screenshots/` fold
 cargo run --release --example screenshots
 ```
 
-### Breakout
-For an example of the Atari playing Breakout, run this command:
-```
-cargo run --release --example breakout
+### Parallel with Rayon
+```bash
+cargo run --release --example parallel
 ```
 
 Controls:
